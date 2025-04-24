@@ -9,12 +9,33 @@
 #include <stdlib.h>       // Para exit(), atoi()
 #include <sys/wait.h>     // Para wait()
 
-void busywork(time_t start_time, time_t max_duration) {
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/times.h>      // times()
+
+int busywork(void)
+{
     struct tms buf;
-    while (time(NULL) - start_time < max_duration) {
+    for (;;) {
         times(&buf);
     }
 }
+
+void obtenerTiempo(){
+    struct rusage usage;
+
+    getrusage(RUSAGE_SELF, &usage);
+
+    long tiempo_usuario = usage.ru_utime.tv_sec;
+    long tiempo_sistema = usage.ru_stime.tv_sec;
+
+    long tiempo_total = tiempo_usuario + tiempo_sistema;
+    int prioridad = getpriority(PRIO_PROCESS,0);
+
+    printf("Hijo con pid %d (prioridad %2d):tiempo en ejecución \t%ld\n", getpid(), prioridad, tiempo_total);
+            
+}
+
 //Ejemplo ./forkprio 3 2 1
 //Se ejecutan 3 forks, con 2 seg de ejecución cada uno y se reduce la prioridad progresivamente
 int main(int argc, char* argv[]) {
@@ -33,14 +54,17 @@ int main(int argc, char* argv[]) {
         //Fork
         pid_t pid = fork();
         if (pid == 0) {  // Proceso hijo
-            int nice_prio = reducir_prio ? 20 + i : 0;
+            
+            int nice_prio = reducir_prio ? 1 + i : 0;
+            
             setpriority(PRIO_PROCESS, 0, nice_prio);
-
+            signal(SIGTERM, obtenerTiempo);
             //Para que imprima el tiempo que realmente ejecutó
-            time_t tiempo_comienzo = time(NULL);
-            busywork(time(NULL), tiempo_ex);
-            time_t tiempo_fin = time(NULL);
-            printf("Hijo con pid %d (prioridad %2d):\t%3ld\n", getpid(), nice_prio, tiempo_fin - tiempo_comienzo);
+
+            //sumar los dos user cpu y system cpu
+            busywork();
+
+            // Calcular tiempo total
             exit(0);
         } else if (pid > 0) {  // Proceso padre
             hijos[i] = pid;
@@ -50,7 +74,7 @@ int main(int argc, char* argv[]) {
         }
     }
     
-
+    
     if (tiempo_ex > 0) {
         sleep((unsigned int)tiempo_ex);
         for (int i = 0; i < num_hijos; i++) {
@@ -61,10 +85,7 @@ int main(int argc, char* argv[]) {
         printf("Ejecutando indefinidamente.\n");
         while (1) pause();
     }
-
-    for (int i = 0; i < num_hijos; i++) {
-        wait(NULL);  
-    }
+    
 
     printf("Todos los procesos hijos finalizaron.\n");
     return 0;
