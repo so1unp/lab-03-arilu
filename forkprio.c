@@ -33,7 +33,7 @@ void obtenerTiempo(){
     int prioridad = getpriority(PRIO_PROCESS,0);
 
     printf("Hijo con pid %d (prioridad %2d):tiempo en ejecución \t%ld\n", getpid(), prioridad, tiempo_total);
-            
+    exit(0);    
 }
 
 //Ejemplo ./forkprio 3 2 1
@@ -65,7 +65,6 @@ int main(int argc, char* argv[]) {
             busywork();
 
             // Calcular tiempo total
-            exit(0);
         } else if (pid > 0) {  // Proceso padre
             hijos[i] = pid;
         } else {
