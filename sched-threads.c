@@ -6,6 +6,7 @@
 #include <time.h>
 #include <strings.h>
 #include <pthread.h>
+#include <sched.h>
 
 pthread_t *threads;
 int *buf;
@@ -76,36 +77,64 @@ int main(int argc, char *argv[]) {
 
     pthread_attr_t attr;
     struct sched_param param;
+    cpu_set_t cpuset;
 
     // Inicializa la estructura attr
     pthread_attr_init(&attr);
 
     // Indica que al crear un hilo usando attr como parámetros, este debe
     // utilizar la política de planificación indicada en dichos parámetros.
-    // COMPLETAR: pthread_attr_setinheritsched()
+    // COMPLETAR: 
+    pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
 
     // Especifica la política de planificación.
-    // COMPLETAR: pthread_attr_setschedpolicy()
+    // COMPLETAR: 
+    pthread_attr_setschedpolicy(&attr, sched_policy);
 
     // Indica el nivel de prioridad que tendrá el hilo creado utilizando attr.
     param.sched_priority = 1;
-    // COMPLETAR: pthread_attr_setschedparam()
+    // COMPLETAR: 
+    pthread_attr_setschedparam(&attr, &param);
 
     // Indica que el hilo creado utilizando el atributo attr debe ejecutar
     // siempre en la CPU 0.
     // COMPLETAR: usar CPU_ZERO, CPU_SET y pthread_attr_setaffinity_np()
 
+    CPU_ZERO(&cpuset);          // Limpiar el conjunto de CPUs
+    CPU_SET(0, &cpuset);        // Agregar la CPU 0 al conjunto
+    if (pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset) != 0) {
+        perror("Error al configurar la afinidad del hilo");
+        exit(EXIT_FAILURE);
+    }
+
     // Crea los hilos.
     // COMPLETAR
+    for (int i = 0; i < count; i++){
+        if(pthread_create(&threads[i], &attr, write_buffer, (void *)(long) i) != 0){
+            fprintf(stderr, "Error al crear el hilo %d\n", i);
+            exit(EXIT_FAILURE);
+        }else{
+            printf("Hilo %d creado\n", i);
+        }     
+    }
+    
 
     // Espera a que terminen todos los hilos.
     // COMPLETAR
+    for (int i = 0; i < count; i++){
+        if(pthread_join(threads[i], &status) != 0){
+            fprintf(stderr, "Error al esperar el hilo %d\n", i);
+            exit(EXIT_FAILURE);
+        }else{
+            printf("Hilo hijo %d terminado\n", i);
+        }     
+    }
 
     // Imprime el buffer.
     for (i = 0; i < count * items; i++) {
         printf("%d ", buf[i]);
     }
     printf("\n");
-
+    printf("Hilo padre terminado\n");
     pthread_exit(NULL);
 }
