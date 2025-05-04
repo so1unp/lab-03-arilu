@@ -7,7 +7,9 @@
 void test_fork(int count, int wait);
 void test_thread(int count, int wait);
 
-
+void *terminar(){
+    pthread_exit(NULL);
+}
 
 int main(int argc, char *argv[]) 
 {
@@ -76,7 +78,6 @@ void test_fork(int num_pro, int wait)
             waitpid(hijos[i], NULL, 0);
         }else if (hijos[i] < 0) {
             perror("Error al crear hijo");
-            //retur 1;
         }
     }
 
@@ -88,4 +89,20 @@ void test_fork(int num_pro, int wait)
 
 void test_thread(int num_thr, int wait) 
 {
+    pthread_t *threads = (pthread_t*) malloc(num_thr * sizeof(pthread_t));
+    pthread_attr_t attr;
+    void *status;
+    pthread_attr_init(&attr);
+
+    for (int i = 0; i < num_thr; i++){
+        if(pthread_create(&threads[i], &attr, terminar, (void *)(long) i) != 0){
+            fprintf(stderr, "Error al crear el hilo %d\n", i);
+            exit(EXIT_FAILURE);
+        }else if(wait != 0){
+            if(pthread_join(threads[i], &status) != 0){
+                fprintf(stderr, "Error al esperar el hilo %d\n", i);
+                exit(EXIT_FAILURE);
+            }
+        }  
+    }
 }
