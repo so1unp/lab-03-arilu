@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
     // COMPLETAR: usar CPU_ZERO, CPU_SET y pthread_attr_setaffinity_np()
 
     CPU_ZERO(&cpuset);          // Limpiar el conjunto de CPUs
-    CPU_SET(0, &cpuset);        // Agregar la CPU 0 al conjunto
+    CPU_SET(0, &cpuset);
     if (pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset) != 0) {
         perror("Error al configurar la afinidad del hilo");
         exit(EXIT_FAILURE);

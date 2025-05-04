@@ -7,6 +7,8 @@
 void test_fork(int count, int wait);
 void test_thread(int count, int wait);
 
+
+
 int main(int argc, char *argv[]) 
 {
     int modo, wait, count;
@@ -34,7 +36,6 @@ int main(int argc, char *argv[])
         wait = 0;
         count = atoi(argv[2]);
     }
-
     
     if (count <= 0) {
         fprintf(stderr, "Error: el contador debe ser mayor que cero.\n");
@@ -60,14 +61,31 @@ int main(int argc, char *argv[])
 //==========================================================================
 // Código para la prueba con fork()
 //==========================================================================
-void test_fork(int count, int wait)
+void test_fork(int num_pro, int wait)
 {
+    pid_t hijos[num_pro];
+
+    for (int i = 0; i < num_pro; i++) {
+        //Fork
+        hijos[i] = fork();
+        if (hijos[i] == 0) {  // Proceso hijo
+            
+            exit(0);
+
+        }else if (hijos[i] > 0 && wait != 0) {  // Proceso padre
+            waitpid(hijos[i], NULL, 0);
+        }else if (hijos[i] < 0) {
+            perror("Error al crear hijo");
+            //retur 1;
+        }
+    }
+
 }
 
 //==========================================================================
 // Código para la prueba con pthread_create()
 //==========================================================================
 
-void test_thread(int count, int wait) 
+void test_thread(int num_thr, int wait) 
 {
 }
